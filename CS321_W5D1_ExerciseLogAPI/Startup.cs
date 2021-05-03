@@ -28,7 +28,8 @@ namespace CS321_W5D1_ExerciseLogAPI
                 options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
 
             // TODO: Prep Part 1: Add Identity services (Part 1 of prep exercise)
-
+            services.AddIdentity<User, IdentityRole>()
+                .AddEntityFrameworkStores<AppDbContext>();
             // TODO: Prep Part 2: Add JWT support 
 
             services.AddScoped<IActivityRepository, ActivityRepository>();

@@ -1,12 +1,13 @@
 using System;
 using CS321_W5D1_ExerciseLogAPI.Core.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace CS321_W5D1_ExerciseLogAPI.Infrastructure.Data
 {
     // TODO: inherit from IdentityDbContext
-    public class AppDbContext : DbContext
-    {
+    public class AppDbContext : IdentityDbContext
+    { 
         public DbSet<ActivityType> ActivityTypes { get; set; }
         public DbSet<Activity> Activities { get; set; }
         // NOTE that we don't have to define a Users DbSet. It is given to us by IdentityDbContext.
