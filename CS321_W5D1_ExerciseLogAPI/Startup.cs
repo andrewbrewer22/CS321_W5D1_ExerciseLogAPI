@@ -1,6 +1,7 @@
 ﻿using CS321_W5D1_ExerciseLogAPI.Core.Models;
 using CS321_W5D1_ExerciseLogAPI.Core.Services;
 using CS321_W5D1_ExerciseLogAPI.Infrastructure.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -9,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace CS321_W5D1_ExerciseLogAPI
 {
@@ -30,7 +33,26 @@ namespace CS321_W5D1_ExerciseLogAPI
             // TODO: Prep Part 1: Add Identity services (Part 1 of prep exercise)
             services.AddIdentity<User, IdentityRole>()
                 .AddEntityFrameworkStores<AppDbContext>();
+
             // TODO: Prep Part 2: Add JWT support 
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                    };
+                });
+
 
             services.AddScoped<IActivityRepository, ActivityRepository>();
             services.AddScoped<IActivityService, ActivityService>();
@@ -42,7 +64,7 @@ namespace CS321_W5D1_ExerciseLogAPI
 
         // TODO: Class Project: Seed admin user
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
         {
             if (env.IsDevelopment())
             {
@@ -61,7 +83,40 @@ namespace CS321_W5D1_ExerciseLogAPI
             app.UseAuthentication();
             app.UseHttpsRedirection();
             app.UseRouting();
+            app.UseAuthorization();
             app.UseEndpoints(endpoints => endpoints.MapControllers());
+
+            SendAdminUser(userManager, roleManager);
+        }
+
+        private void SendAdminUser(UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
+        {
+            if(roleManager.FindByNameAsync("Admin").Result == null)
+            {
+                var adminRole = new IdentityRole
+                {
+                    Name = "Admin",
+                    NormalizedName = "Admin".ToUpper()
+                };
+                var result = roleManager.CreateAsync(adminRole).Result;
+            }
+
+            if(userManager.FindByNameAsync("admin").Result == null)
+            {
+                User user = new User
+                {
+                    UserName = "admin@test.com",
+                    Email = "admin@test.com"
+                };
+
+                IdentityResult result = userManager.CreateAsync(user, "Passw0rd!").Result;
+
+                if(result.Succeeded)
+                {
+                    userManager.AddToRoleAsync(user, "Admin").Wait();
+                }
+
+            }
         }
 
 
