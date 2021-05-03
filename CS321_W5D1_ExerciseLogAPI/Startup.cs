@@ -58,6 +58,7 @@ namespace CS321_W5D1_ExerciseLogAPI
 
             // TODO: Prep Part 1: Use authentication 
 
+            app.UseAuthentication();
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapControllers());
